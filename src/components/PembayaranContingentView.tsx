@@ -22,7 +22,8 @@ export default function PembayaranContingentView({
 }: PembayaranContingentViewProps) {
   const [dragActive, setDragActive] = useState(false);
   const [viewPaymentInfo, setViewPaymentInfo] = useState(true);
-  const [showPrintInvoice, setShowPrintInvoice] = useState(false); // Print view state
+  const [showPrintInvoice, setShowPrintInvoice] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<"TRANSFER" | "QRIS">(settings.qrisPhotoUrl ? "QRIS" : "TRANSFER"); // Print view state
 
   const getInvoiceNumber = () => {
     if (contingent.customInvoiceNumber) return contingent.customInvoiceNumber;
@@ -393,10 +394,34 @@ export default function PembayaranContingentView({
               )}
             </div>
 
-            {settings.paymentInfo && (
-              <div className="p-4 bg-slate-50 border border-slate-150 rounded-2xl text-slate-800 text-xs font-semibold whitespace-pre-wrap leading-relaxed mt-4 print:hidden">
-                <span className="text-[10px] uppercase font-black text-slate-400 tracking-wider block mb-2">Informasi & Petunjuk Rekening Pembayaran</span>
+            {settings.qrisPhotoUrl && (
+              <div className="flex bg-slate-100 p-1 rounded-lg gap-1 border border-slate-200 mt-4 max-w-sm print:hidden">
+                <button
+                  onClick={() => setPaymentMethod("TRANSFER")}
+                  className={`flex-1 px-3 py-2 text-xs font-bold uppercase rounded-md transition-all ${paymentMethod === "TRANSFER" ? "bg-white shadow-sm text-slate-900" : "text-slate-500 hover:text-slate-700"}`}
+                >
+                  Transfer Bank
+                </button>
+                <button
+                  onClick={() => setPaymentMethod("QRIS")}
+                  className={`flex-1 px-3 py-2 text-xs font-bold uppercase rounded-md transition-all ${paymentMethod === "QRIS" ? "bg-white shadow-sm text-slate-900" : "text-slate-500 hover:text-slate-700"}`}
+                >
+                  QRIS
+                </button>
+              </div>
+            )}
+            
+            {settings.paymentInfo && (!settings.qrisPhotoUrl || paymentMethod === "TRANSFER") && (
+              <div className="p-4 bg-slate-50 border border-slate-150 rounded-2xl text-slate-800 text-xs font-semibold whitespace-pre-wrap leading-relaxed mt-4 print:hidden animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <span className="text-[10px] uppercase font-black text-slate-400 tracking-wider block mb-2">Informasi & Petunjuk Rekening Pembayaran / Transfer Bank</span>
                 {settings.paymentInfo}
+              </div>
+            )}
+            
+            {settings.qrisPhotoUrl && paymentMethod === "QRIS" && (
+              <div className="p-4 bg-white border border-slate-150 rounded-2xl flex flex-col items-center mt-4 print:hidden shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-300">
+                <span className="text-[10px] uppercase font-black text-slate-400 tracking-wider block mb-3 text-center">Scan QRIS untuk Pembayaran</span>
+                <img src={settings.qrisPhotoUrl} alt="QRIS" className="w-full max-w-[250px] h-auto rounded-xl border border-slate-200" />
               </div>
             )}
 
@@ -479,14 +504,19 @@ export default function PembayaranContingentView({
                 <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block">Total Tagihan</span>
                 <strong className="text-2xl font-black text-slate-950">{formatRupiah(totalBill)}</strong>
               </div>
-              <div className="flex gap-2">
-
-                <button
-                  onClick={() => setShowPrintInvoice(true)}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition-all flex items-center gap-1.5 shadow-sm"
-                >
-                  <FileText size={14} /> Cetak Invoice
-                </button>
+              <div className="flex items-center gap-2">
+                {contingent.paymentStatus === "Lunas" ? (
+                  <button
+                    onClick={() => setShowPrintInvoice(true)}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
+                  >
+                    <FileText size={14} /> Cetak Invoice
+                  </button>
+                ) : (
+                  <p className="text-[10px] text-slate-500 font-semibold max-w-[200px] text-right italic">
+                    Jika terkonfirmasi lunas maka invoice akan muncul.
+                  </p>
+                )}
               </div>
             </div>
 

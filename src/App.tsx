@@ -200,13 +200,14 @@ export default function App() {
   const [globalAthleteClassFilter, setGlobalAthleteClassFilter] = useState("SEMUA");
   const [globalAthleteTimbangFilter, setGlobalAthleteTimbangFilter] = useState("SEMUA");
   const [globalAthletePage, setGlobalAthletePage] = useState(1);
+  const [globalAthletePerPage, setGlobalAthletePerPage] = useState<number | "ALL">(20);
   const [showAdminAddAthleteContingentModal, setShowAdminAddAthleteContingentModal] = useState(false);
   const [showPrintAthletesPreview, setShowPrintAthletesPreview] = useState(false);
 
   // Online users state
   const [onlineStatus, setOnlineStatus] = useState<{ admin: string[]; kontingen: string[] }>({
-    admin: ["DIM"],
-    kontingen: ["Cabang Ponorogo", "Puslatcab Ngawi"]
+    admin: [],
+    kontingen: []
   });
 
   // --- GOOGLE SHEETS BACKUP ENGINE STATE & EFFECTS ---
@@ -285,6 +286,15 @@ export default function App() {
 
 
   // Session check for single device login
+  // Update document title dynamically
+  useEffect(() => {
+    if (settings && settings.eventTitle) {
+      document.title = settings.eventTitle;
+    } else {
+      document.title = "Sistem Pendaftaran Pencak Silat";
+    }
+  }, [settings?.eventTitle]);
+
   useEffect(() => {
     if (currentUser && currentUser.role !== "admin") {
       const storedUser = contingents.find((c: any) => c.username === currentUser.username);
@@ -376,6 +386,7 @@ export default function App() {
   const appendLog = (action: string, detail: string) => {
     const wibDate = new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" });
     const newLog: ActivityLog = {
+      id: Math.random().toString(36).substring(2, 11),
       timestamp: wibDate.replace(/\//g, "-"),
       user: currentUser ? (currentUser.role === "admin" ? currentUser.username : currentUser.contingentName) : "SYSTEM",
       action,
@@ -764,6 +775,7 @@ Mohon validasi kelengkapan berkas atlet ini.`);
   const handleSecurityAddSystemLog = (actor: string, activity: string, detail: string) => {
     const wibDate = new Date().toLocaleString("id-ID", { timeZone: "Asia/Jakarta" });
     const newLog: ActivityLog = {
+      id: Math.random().toString(36).substring(2, 11),
       timestamp: wibDate.replace(/\//g, "-"),
       user: actor,
       action: activity,
@@ -980,7 +992,7 @@ Mohon validasi kelengkapan berkas atlet ini.`);
       case "dashboard":
         if (currentUser?.role === "admin") {
           return (
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }}><DashboardAdmin
+            <DashboardAdmin
               contingents={contingents}
               athletes={athletes}
               settings={settings}
@@ -1022,16 +1034,18 @@ Mohon validasi kelengkapan berkas atlet ini.`);
               }}
               onAddContingent={handleAddContingent}
               onDeleteContingent={handleDeleteContingent}
+              onNavigateToPayment={() => setActiveView("kelola-pembayaran")}
+              onNavigateToAthletes={() => setActiveView("atlet-seluruh")}
               onAddAthleteForContingent={(contingentName) => {
                 setTargetContingentForAdd(contingentName);
                 setSelectedAthlete(null);
                 setIsEditingAthlete(true);
               }}
-            /></motion.div>
+            />
           );
         } else if (currentUser) {
           return (
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }} className="h-full"><DashboardContingent
+            <DashboardContingent
               contingent={currentUser}
               athletes={athletes}
               settings={settings}
@@ -1064,7 +1078,7 @@ Mohon validasi kelengkapan berkas atlet ini.`);
               onTriggerRefresh={() => {
                 alert("Data sinkronisasi atlet sudah real-time terhubung dengan server (Firebase).");
               }}
-            /></motion.div>
+            />
           );
         }
         return null;
@@ -1102,7 +1116,7 @@ Mohon validasi kelengkapan berkas atlet ini.`);
           return matchSearch && matchCat && matchContingent && matchGender && matchAcc && matchClass && matchTimbang;
         });
 
-        const perPage = 20;
+        const perPage = globalAthletePerPage === "ALL" ? filteredList.length || 1 : globalAthletePerPage;
         const maxPages = Math.ceil(filteredList.length / perPage) || 1;
         const currentPageSafe = Math.min(globalAthletePage, maxPages);
         const startIndex = (currentPageSafe - 1) * perPage;
@@ -1206,7 +1220,7 @@ Mohon validasi kelengkapan berkas atlet ini.`);
                     onClick={handleExportAthletesExcel}
                     className="bg-slate-700 hover:bg-slate-600 text-white font-extrabold text-xs px-4 py-2.5 rounded-xl transition-all cursor-pointer flex items-center gap-1.5 border border-slate-600"
                   >
-                    <Download size={13} /> Export Excel
+                    <Download size={13} /> Ekspor Excel
                   </button>
                   <button
                     onClick={() => window.print()}
@@ -1512,8 +1526,26 @@ Mohon validasi kelengkapan berkas atlet ini.`);
             </div>
 
             {/* Pagination Controls */}
-            {maxPages > 1 && (
-              <div className="flex justify-center items-center gap-2 pt-2">
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-4">
+              <div className="flex items-center gap-2 text-xs font-bold text-slate-500">
+                <span className="uppercase tracking-wider">Tampilkan:</span>
+                <select
+                  value={globalAthletePerPage}
+                  onChange={(e) => {
+                    setGlobalAthletePerPage(e.target.value === "ALL" ? "ALL" : Number(e.target.value));
+                    setGlobalAthletePage(1);
+                  }}
+                  className="px-3 py-1.5 bg-white border border-slate-200 rounded-xl outline-none cursor-pointer text-slate-800 shadow-sm"
+                >
+                  <option value={10}>10 Data</option>
+                  <option value={20}>20 Data</option>
+                  <option value={50}>50 Data</option>
+                  <option value="ALL">Semua Data</option>
+                </select>
+              </div>
+              
+              {maxPages > 1 && (
+                <div className="flex justify-center items-center gap-2">
                 <button
                   disabled={currentPageSafe <= 1}
                   onClick={() => setGlobalAthletePage(prev => Math.max(prev - 1, 1))}
@@ -1555,6 +1587,7 @@ Mohon validasi kelengkapan berkas atlet ini.`);
                 </button>
               </div>
             )}
+            </div>
 
             {/* Modal Selector for Target Contingent for Adding Athlete */}
             {showAdminAddAthleteContingentModal && (
@@ -1783,7 +1816,7 @@ Mohon validasi kelengkapan berkas atlet ini.`);
         return (
           <UserProfile
             currentUser={currentUser}
-            onGantiPassword={handleGantiPasswordActive}
+            onUpdatePassword={handleGantiPasswordActive}
             onUpdateProfile={handleUpdateProfile}
           />
         );
@@ -1811,6 +1844,7 @@ Mohon validasi kelengkapan berkas atlet ini.`);
             setSheetSyncActive={setSheetSyncActive}
             lastSyncedTime={lastSyncedTime}
             onTriggerSheetsSync={handleTriggerSheetsSync}
+            onlineStatus={onlineStatus}
           />
         );
 
@@ -2032,10 +2066,11 @@ Mohon validasi kelengkapan berkas atlet ini.`);
               ) : (
                 /* MAIN ACTIVE VIEW */
                 <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.15 }}
+                  key={activeView}
+                  initial={{ opacity: 0, y: 15, filter: 'blur(4px)' }}
+                  animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                  exit={{ opacity: 0, y: -15, filter: 'blur(4px)' }}
+                  transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
                 >
                   {renderActiveView()}
                 </motion.div>
@@ -2243,7 +2278,7 @@ Mohon validasi kelengkapan berkas atlet ini.`);
                             }}
                             className="bg-sky-600 hover:bg-sky-500 text-white font-extrabold text-xs py-3 rounded-xl transition-all text-center"
                           >
-                            ✏️ Edit Data
+                            ✏️ Ubah Data
                           </button>
                           
                           <button
@@ -2290,7 +2325,7 @@ Mohon validasi kelengkapan berkas atlet ini.`);
                             }}
                             className="w-full bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs py-3.5 rounded-xl transition-all text-center"
                           >
-                            ✏️ Edit Berkas Atlet
+                            ✏️ Ubah Berkas Atlet
                           </button>
                         )}
 
@@ -2448,18 +2483,9 @@ Mohon validasi kelengkapan berkas atlet ini.`);
                       setLoginUser("DIM");
                       setLoginPass("admin123");
                     }}
-                    className="flex-1 bg-slate-800/60 hover:bg-slate-800 text-slate-300 font-bold text-[10px] py-2 rounded-lg border border-slate-850"
+                    className="flex-1 bg-slate-800/60 hover:bg-slate-800 text-slate-300 font-bold text-[10px] py-2 rounded-lg border border-slate-850 cursor-pointer"
                   >
                     🛡️ Demo Admin
-                  </button>
-                  <button
-                    onClick={() => {
-                      setLoginUser("user1");
-                      setLoginPass("pass123");
-                    }}
-                    className="flex-1 bg-slate-800/60 hover:bg-slate-800 text-slate-300 font-bold text-[10px] py-2 rounded-lg border border-slate-850"
-                  >
-                    🥋 Demo Peserta
                   </button>
                 </div>
               </div>

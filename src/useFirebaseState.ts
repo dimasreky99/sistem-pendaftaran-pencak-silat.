@@ -28,7 +28,7 @@ export function useFirebaseCollection<T extends { id: string }>(collectionName: 
     return unsub;
   }, [collectionName]);
 
-  const setCollection = (action: React.SetStateAction<T[]>) => {
+  const setCollection = (action: any) => {
     setData((prev) => {
       const newData = typeof action === 'function' ? (action as any)(prev) : action;
       syncToFirebase(prev, newData);
@@ -102,7 +102,7 @@ export function useFirebaseDoc<T>(docPath: string, initialData: T) {
     return unsub;
   }, [docPath]);
 
-  const setDocument = (action: React.SetStateAction<T>) => {
+  const setDocument = (action: any) => {
     setData((prev) => {
        const newData = typeof action === 'function' ? (action as any)(prev) : action;
        if (JSON.stringify(prev) !== JSON.stringify(newData)) {

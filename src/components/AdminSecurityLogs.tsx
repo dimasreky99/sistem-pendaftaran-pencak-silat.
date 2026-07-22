@@ -19,6 +19,7 @@ interface AdminSecurityLogsProps {
   setSheetSyncActive: (active: boolean) => void;
   lastSyncedTime: string;
   onTriggerSheetsSync: () => void;
+  onlineStatus?: { admin: string[]; kontingen: string[] };
 }
 
 export default function AdminSecurityLogs({
@@ -32,7 +33,8 @@ export default function AdminSecurityLogs({
   sheetSyncActive,
   setSheetSyncActive,
   lastSyncedTime,
-  onTriggerSheetsSync
+  onTriggerSheetsSync,
+  onlineStatus
 }: AdminSecurityLogsProps) {
   const [showGuide, setShowGuide] = useState(false);
   // Stats states for real-time performance feel

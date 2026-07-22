@@ -3,6 +3,8 @@ import {
   Settings, ShieldAlert, Award, Calendar, Image as ImageIcon, DollarSign, Plus, Trash2, ArrowUpRight, HelpCircle, HardDriveDownload
 } from "lucide-react";
 import { SystemSettings, CategoryConfig } from "../types";
+import { generateDummyAthletes } from "../dummy";
+
 import { DEFAULT_KELAS_IPSI } from "../constants";
 
 interface SystemSettingsProps {
@@ -449,6 +451,58 @@ export default function SystemSettingsComponent({
                     onChange={(e) => handleUpdateBasic("paymentInfo", e.target.value)}
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-semibold text-xs text-slate-700 focus:outline-none leading-relaxed"
                   />
+                  
+                  <div className="mt-4">
+                    <label className="text-xs font-bold text-slate-700 block mb-1.5">Gambar QRIS (Opsional)</label>
+                    <div className="flex flex-col sm:flex-row gap-4 items-start">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          if (e.target.files && e.target.files[0]) {
+                            const file = e.target.files[0];
+                            const reader = new FileReader();
+                            reader.onload = (event) => {
+                              const img = new Image();
+                              img.onload = () => {
+                                const canvas = document.createElement("canvas");
+                                const ctx = canvas.getContext("2d");
+                                let w = img.width;
+                                let h = img.height;
+                                const max_size = 1200; // QR code needs good resolution
+                                if (w > h) {
+                                  if (w > max_size) { h *= max_size / w; w = max_size; }
+                                } else {
+                                  if (h > max_size) { w *= max_size / h; h = max_size; }
+                                }
+                                canvas.width = w;
+                                canvas.height = h;
+                                ctx?.drawImage(img, 0, 0, w, h);
+                                const compressedBase64 = canvas.toDataURL("image/jpeg", 0.7);
+                                handleUpdateBasic("qrisPhotoUrl", compressedBase64);
+                              };
+                              img.src = event.target?.result as string;
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                        className="text-xs w-full sm:w-auto"
+                      />
+                      {localSettings.qrisPhotoUrl && (
+                        <div className="relative">
+                          <img src={localSettings.qrisPhotoUrl} alt="QRIS" className="w-24 rounded-lg border shadow-sm" />
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateBasic("qrisPhotoUrl", "")}
+                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
                   <div className="mt-3 space-y-3">
                                         <div>
                       <label className="text-xs font-bold text-slate-700 block mb-1.5">No. Awal Invoice (Prefix Angka)</label>
@@ -1123,6 +1177,37 @@ export default function SystemSettingsComponent({
         >
           💾 SIMPAN PENGATURAN
         </button>
+      </div>
+
+      {/* DEBUG/TESTING AREA */}
+      <div className="bg-amber-50 rounded-3xl p-6 border border-amber-200 space-y-4">
+        <h3 className="font-extrabold text-amber-800 text-sm uppercase tracking-tight flex items-center gap-2">
+          <ShieldAlert size={18} className="text-amber-600" />
+          Pengujian Bagan (Otomatis)
+        </h3>
+        <p className="text-xs text-amber-700 font-semibold leading-relaxed leading-normal">
+          Klik tombol di bawah untuk membuat data 2-50 atlet dummy secara acak untuk SETIAP kelas aktif yang bukan kategori bebas. 
+          Gunakan aksi ini hanya jika database Anda masih kosong atau saat menguji sistem bagan pertandingan!
+        </p>
+        <div className="flex flex-wrap gap-3.5">
+          <button
+            onClick={async () => {
+              if (window.confirm("Apakah Anda yakin ingin menginjeksi ratusan/ribuan atlet palsu ke dalam sistem ini? Aksi ini akan mempengaruhi beban Firestore Anda.")) {
+                try {
+                  showToast("Memproses injeksi data atlet dummy ke Firestore... Harap tunggu.");
+                  await generateDummyAthletes(localSettings, 2);
+                  showToast("Berhasil memasukkan data atlet dummy ke seluruh kelas pertandingan!");
+                } catch (e) {
+                  console.error(e);
+                  alert("Gagal menginjeksi data. Periksa konsol.");
+                }
+              }
+            }}
+            className="bg-amber-600 hover:bg-amber-500 text-white font-extrabold text-[10px] px-6 py-3.5 rounded-2xl transition-all shadow-md uppercase"
+          >
+            🧪 GENERATE DUMMY ATLET (2-50 / KELAS)
+          </button>
+        </div>
       </div>
 
       {/* DANGEROUS DISASTER ACTION AREA: ARCHIVE & RESET SYSTEM */}

@@ -20,6 +20,8 @@ interface DashboardAdminProps {
   onAddContingent?: (c: Contingent) => void;
   onAddAthleteForContingent?: (contingentName: string) => void;
   onDeleteContingent?: (contingentName: string) => void;
+  onNavigateToPayment?: () => void;
+  onNavigateToAthletes?: () => void;
 }
 
 export default function DashboardAdmin({
@@ -36,7 +38,9 @@ export default function DashboardAdmin({
   onTriggerRefresh,
   onAddContingent,
   onAddAthleteForContingent,
-  onDeleteContingent
+  onDeleteContingent,
+  onNavigateToPayment,
+  onNavigateToAthletes
 }: DashboardAdminProps) {
   const [searchKonti, setSearchKonti] = useState("");
   const [selectedContingent, setSelectedContingent] = useState<string | null>(null);
@@ -162,9 +166,10 @@ export default function DashboardAdmin({
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Atlet with Quick Add Plus button */}
         <motion.div 
+          onClick={() => onNavigateToAthletes && onNavigateToAthletes()}
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-slate-900 border border-slate-800 rounded-2xl p-5 text-white flex items-center justify-between gap-4 shadow-sm relative overflow-visible"
+          className="bg-slate-900 border border-slate-800 rounded-2xl p-5 text-white flex items-center justify-between gap-4 shadow-sm relative overflow-visible cursor-pointer hover:bg-slate-800 transition-colors"
         >
           <div className="flex items-center gap-4">
             {/* Quick action button + */}
@@ -215,10 +220,11 @@ export default function DashboardAdmin({
         {/* Belum Lunas */}
         {!settings.isFree && (
           <motion.div 
+            onClick={() => onNavigateToPayment && onNavigateToPayment()}
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="bg-slate-900 border border-slate-800 rounded-2xl p-5 text-white flex items-center gap-4 shadow-sm"
+            className="bg-slate-900 border border-slate-800 rounded-2xl p-5 text-white flex items-center gap-4 shadow-sm cursor-pointer hover:bg-slate-800 transition-colors"
           >
             <div className="bg-amber-950/50 p-3 rounded-xl border border-amber-900/30 text-amber-400">
               <ShieldCheck size={24} />

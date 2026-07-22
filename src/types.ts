@@ -25,6 +25,7 @@ export interface SystemSettings {
   idCardBgColor: string; // fallback color theme
   categoryPrices: Record<string, number>;
   paymentInfo: string;
+  qrisPhotoUrl?: string;
   signatureUrl?: string;
   stampUrl?: string;
   treasurerName?: string;

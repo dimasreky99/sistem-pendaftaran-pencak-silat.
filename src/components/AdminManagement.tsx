@@ -31,7 +31,7 @@ export default function AdminManagement({
 
   // Derived sub-admins list (role === "admin" but not master admin DIM)
   const subAdmins = useMemo(() => {
-    return contingents.filter(c => c.role === "admin" && c.username !== "DIM");
+    return contingents.filter(c => c.role === "admin");
   }, [contingents]);
 
   const filteredSubAdmins = useMemo(() => {
@@ -266,8 +266,13 @@ export default function AdminManagement({
                   <tbody className="divide-y divide-slate-100 font-semibold text-slate-700">
                     {filteredSubAdmins.map((sub) => (
                       <tr key={sub.id} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="py-3.5 px-4 font-black text-slate-900 uppercase">
+                        <td className="py-3.5 px-4 font-black text-slate-900 uppercase flex items-center gap-2">
                           {sub.username}
+                          {sub.username === "DIM" && (
+                            <span className="bg-amber-100 text-amber-800 text-[9px] px-1.5 py-0.5 rounded font-black tracking-wide">
+                              MASTER
+                            </span>
+                          )}
                         </td>
                         <td className="py-3.5 px-4 text-slate-600">
                           {sub.pjName}
@@ -301,12 +306,14 @@ export default function AdminManagement({
                             >
                               Sandi
                             </button>
-                            <button
-                              onClick={() => handleDeleteSub(sub.id, sub.username)}
-                              className="bg-rose-50 hover:bg-rose-100 text-rose-600 p-1.5 rounded-lg"
-                            >
-                              <Trash2 size={13} />
-                            </button>
+                            {sub.username !== "DIM" && (
+                              <button
+                                onClick={() => handleDeleteSub(sub.id, sub.username)}
+                                className="bg-rose-50 hover:bg-rose-100 text-rose-600 p-1.5 rounded-lg"
+                              >
+                                <Trash2 size={13} />
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>

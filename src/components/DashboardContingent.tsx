@@ -51,7 +51,7 @@ export default function DashboardContingent({
     return acc + price;
   }, 0);
 
-  const totalBill = settings.isFree ? 0 : subtotal + contingent.kodeUnik;
+  const totalBill = settings.isFree ? 0 : subtotal;
 
   const hasRevisions = myAthletes.some(a => !!a.revisiCatatan);
 
@@ -247,13 +247,7 @@ export default function DashboardContingent({
                             <span>Subtotal Atlet:</span>
                             <span>{formatRupiah(subtotal)}</span>
                           </div>
-                          <div className="flex justify-between text-rose-600 font-bold">
-                            <span className="flex items-center gap-1">
-                              Kode Unik Pembayaran: 
-                              <HelpCircle size={12} className="cursor-pointer text-slate-400 hover:text-slate-600" title="Digunakan agar panitia dapat mengenali dana transfer Anda lebih cepat" />
-                            </span>
-                            <span>+{contingent.kodeUnik}</span>
-                          </div>
+                          
                         </div>
                       </div>
                     )}

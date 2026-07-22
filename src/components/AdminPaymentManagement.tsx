@@ -60,7 +60,7 @@ export default function AdminPaymentManagement({
       return acc + (unitPrice * count);
     }, 0);
 
-    const originalBill = settings.isFree ? 0 : subtotal + (contingent.kodeUnik || 0);
+    const originalBill = settings.isFree ? 0 : subtotal;
     const finalBill = contingent.nominalRevisi !== undefined ? contingent.nominalRevisi : originalBill;
 
     return {
@@ -237,7 +237,7 @@ export default function AdminPaymentManagement({
                   <th className="py-3.5 px-6">Kontingen / PJ</th>
                   <th className="py-3.5 px-4 text-center">Atlet</th>
                   <th className="py-3.5 px-4">Kategori Terpilih</th>
-                  <th className="py-3.5 px-4 text-right">Tagihan Sistem / Revisi</th>
+                  
                   <th className="py-3.5 px-4 text-center">Bukti Bayar</th>
                   <th className="py-3.5 px-4 text-center">Aksi Status</th>
                 </tr>
@@ -284,63 +284,6 @@ export default function AdminPaymentManagement({
                           </div>
                         ) : (
                           <span className="text-slate-400 italic text-[10px]">Belum mendaftarkan atlet</span>
-                        )}
-                      </td>
-
-                      {/* Bill / Overridable Nominal */}
-                      <td className="py-4 px-4 text-right">
-                        {editingId === contingent.id ? (
-                          <div className="flex items-center gap-1.5 justify-end">
-                            <input
-                              type="number"
-                              value={tempNominal}
-                              onChange={(e) => setTempNominal(e.target.value)}
-                              className="w-28 px-2 py-1 text-xs border-2 border-emerald-500 rounded-lg font-bold text-slate-800 text-right focus:outline-none"
-                              autoFocus
-                            />
-                            <button
-                              onClick={() => handleSaveNominal(contingent.id)}
-                              className="bg-emerald-600 text-white p-1 rounded hover:bg-emerald-500"
-                              title="Simpan"
-                            >
-                              <Save size={14} />
-                            </button>
-                            {isOverridden && (
-                              <button
-                                onClick={() => handleResetNominal(contingent.id)}
-                                className="bg-rose-100 text-rose-700 p-1 rounded hover:bg-rose-200"
-                                title="Reset Asli"
-                              >
-                                <RefreshCw size={14} />
-                              </button>
-                            )}
-                            <button
-                              onClick={() => setEditingId(null)}
-                              className="bg-slate-200 text-slate-600 p-1 rounded hover:bg-slate-300"
-                            >
-                              <X size={14} />
-                            </button>
-                          </div>
-                        ) : (
-                          <div 
-                            onClick={() => handleStartEdit(contingent.id, finalBill)}
-                            className="group cursor-pointer inline-flex flex-col items-end hover:bg-slate-100 px-2.5 py-1.5 rounded-xl transition-all"
-                            title="Klik untuk ubah nominal"
-                          >
-                            <div className="flex items-center gap-1 text-xs font-black text-slate-900">
-                              {formatRupiah(finalBill)}
-                              <Edit3 size={11} className="text-slate-400 group-hover:text-emerald-600 transition-colors" />
-                            </div>
-                            {isOverridden ? (
-                              <span className="text-[9px] text-amber-600 font-extrabold uppercase mt-0.5">
-                                Revised (Asli: {formatRupiah(originalBill)})
-                              </span>
-                            ) : (
-                              <span className="text-[9px] text-slate-400 font-medium mt-0.5">
-                                Sesuai Sistem
-                              </span>
-                            )}
-                          </div>
                         )}
                       </td>
 

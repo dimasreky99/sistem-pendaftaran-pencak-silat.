@@ -17,6 +17,7 @@ export default function IdCardPreview({
   onCancel,
   onDownloadPng
 }: IdCardPreviewProps) {
+  const [filterMode, setFilterMode] = useState<"ALL" | "OFFICIAL" | "ATLET">("ALL");
   
   const targetAthletes = athletes || (athlete ? [athlete] : []);
 

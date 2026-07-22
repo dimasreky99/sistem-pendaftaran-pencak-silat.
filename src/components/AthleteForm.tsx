@@ -218,6 +218,22 @@ export default function AthleteForm({
       return;
     }
 
+    // Validate custom fields
+    for (let i = 0; i < settings.customFields.length; i++) {
+      if (!customData[i] || customData[i].trim() === "") {
+        alert(`Kolom "${settings.customFields[i]}" wajib diisi!`);
+        return;
+      }
+    }
+
+    // Validate photo uploads
+    for (let i = 0; i < settings.photoLabels.length; i++) {
+      if (!fotos[i]) {
+        alert(`Berkas "${settings.photoLabels[i]}" wajib diupload!`);
+        return;
+      }
+    }
+
     // Prestasi limits check on submit
     if (matchType === "Prestasi") {
       const registeredCount = (athletes || []).filter(a => {
@@ -531,6 +547,8 @@ export default function AthleteForm({
                         <input
                           type="file"
                           accept="image/*"
+                          required={!hasFile}
+                          capture="environment"
                           onChange={(e) => {
                             if (e.target.files && e.target.files[0]) {
                               handleFileUpload(idx, e.target.files[0]);

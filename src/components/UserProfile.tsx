@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { User, ShieldCheck, Camera, Shield, Phone, Key, Lock, Save } from "lucide-react";
-import { User as UserType } from "../types";
+import { Contingent } from "../types";
 
 interface UserProfileProps {
-  currentUser: UserType;
+  currentUser: Contingent;
   onUpdateProfile: (data: any) => void;
   onUpdatePassword: (oldPw: string, newPw: string) => void;
 }
@@ -30,7 +30,7 @@ export default function UserProfile({ currentUser, onUpdateProfile, onUpdatePass
       alert("Password baru dan konfirmasi password tidak cocok!");
       return;
     }
-    onUpdatePassword(oldPassword, newPassword);
+    if(onUpdatePassword) onUpdatePassword(oldPassword, newPassword);
     setOldPassword("");
     setNewPassword("");
     setConfirmPassword("");
