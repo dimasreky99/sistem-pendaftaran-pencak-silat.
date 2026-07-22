@@ -6,6 +6,7 @@ import LoadingOverlay from "./components/LoadingOverlay";
 import { 
   SystemSettings, Contingent, Athlete, ActivityLog, Competitor, MatchNode
 } from "./types";
+import { useFirebaseCollection, useFirebaseDoc } from "./useFirebaseState";
 import { 
   DEFAULT_SETTINGS, INITIAL_CONTINGENTS, INITIAL_ATHLETES, INITIAL_LOGS, DEFAULT_KELAS_IPSI
 } from "./constants";
@@ -144,48 +145,13 @@ const autoResolveAllBrackets = (athletesList: Athlete[]) => {
 
 export default function App() {
   // --- DATABASE STATES ---
-  const [settings, setSettings] = useState<SystemSettings>(() => {
-    const saved = localStorage.getItem("silat_settings");
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        // Migrate classData if it has an older structure (e.g. fewer classes in Usia Dini 2)
-        if (!parsed.classData || !parsed.classData["Usia Dini 2"] || parsed.classData["Usia Dini 2"].classes.length < 15) {
-          parsed.classData = DEFAULT_KELAS_IPSI;
-          localStorage.setItem("silat_settings", JSON.stringify(parsed));
-        }
-        return parsed;
-      } catch (e) {
-        return DEFAULT_SETTINGS;
-      }
-    }
-    return DEFAULT_SETTINGS;
-  });
+  const [settings, setSettings, isSettingsLoaded] = useFirebaseDoc<SystemSettings>("globals/settings", DEFAULT_SETTINGS);
 
-  const [contingents, setContingents] = useState<Contingent[]>(() => {
-    const CACHE_VERSION = "v3_contingents";
-    if (localStorage.getItem("silat_cache_version_contingents") !== CACHE_VERSION) {
-      localStorage.setItem("silat_cache_version_contingents", CACHE_VERSION);
-      return INITIAL_CONTINGENTS;
-    }
-    const saved = localStorage.getItem("silat_contingents");
-    return saved ? JSON.parse(saved) : INITIAL_CONTINGENTS;
-  });
+  const [contingents, setContingents, isContingentsLoaded] = useFirebaseCollection<Contingent>("contingents", INITIAL_CONTINGENTS);
 
-  const [athletes, setAthletes] = useState<Athlete[]>(() => {
-    const CACHE_VERSION = "v3";
-    if (localStorage.getItem("silat_cache_version") !== CACHE_VERSION) {
-      localStorage.setItem("silat_cache_version", CACHE_VERSION);
-      return INITIAL_ATHLETES;
-    }
-    const saved = localStorage.getItem("silat_athletes");
-    return saved ? JSON.parse(saved) : INITIAL_ATHLETES;
-  });
+  const [athletes, setAthletes, isAthletesLoaded] = useFirebaseCollection<Athlete>("athletes", INITIAL_ATHLETES);
 
-  const [logs, setLogs] = useState<ActivityLog[]>(() => {
-    const saved = localStorage.getItem("silat_logs");
-    return saved ? JSON.parse(saved) : INITIAL_LOGS;
-  });
+  const [logs, setLogs, isLogsLoaded] = useFirebaseCollection<ActivityLog>("logs", INITIAL_LOGS);
 
   // --- APPLICATION STATE ---
   const [currentUser, setCurrentUser] = useState<Contingent | null>(() => {
@@ -321,51 +287,14 @@ export default function App() {
   // Session check for single device login
   useEffect(() => {
     if (currentUser && currentUser.role !== "admin") {
-      const interval = setInterval(() => {
-        const storedContingents = JSON.parse(localStorage.getItem("silat_contingents") || "[]");
-        const storedUser = storedContingents.find((c: any) => c.username === currentUser.username);
-        const currentSession = sessionStorage.getItem("current_session_token");
-        if (storedUser && storedUser.sessionToken && storedUser.sessionToken !== currentSession) {
-          alert("Sesi login Anda telah berakhir karena akun ini login di perangkat lain.");
-          handleLogout();
-        }
-      }, 3000);
-      return () => clearInterval(interval);
+      const storedUser = contingents.find((c: any) => c.username === currentUser.username);
+      const currentSession = sessionStorage.getItem("current_session_token");
+      if (storedUser && storedUser.sessionToken && storedUser.sessionToken !== currentSession) {
+        alert("Sesi login Anda telah berakhir karena akun ini login di perangkat lain.");
+        handleLogout();
+      }
     }
-  }, [currentUser]);
-
-  // --- SIDE EFFECTS: LOCAL STORAGE SYNC ---
-  useEffect(() => {
-    try {
-      localStorage.setItem("silat_settings", JSON.stringify(settings));
-    } catch (e) {
-      console.warn("Storage quota exceeded or unavailable for settings:", e);
-    }
-  }, [settings]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem("silat_contingents", JSON.stringify(contingents));
-    } catch (e) {
-      console.warn("Storage quota exceeded or unavailable for contingents:", e);
-    }
-  }, [contingents]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem("silat_athletes", JSON.stringify(athletes));
-    } catch (e) {
-      console.warn("Storage quota exceeded or unavailable for athletes:", e);
-    }
-  }, [athletes]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem("silat_logs", JSON.stringify(logs));
-    } catch (e) {
-      console.warn("Storage quota exceeded or unavailable for logs:", e);
-    }
-  }, [logs]);
+  }, [currentUser, contingents]);
 
   useEffect(() => {
     if (currentUser) {
@@ -501,7 +430,6 @@ export default function App() {
         updatedUser.sessionToken = newToken;
         const updatedContingents = contingents.map(c => c.username === found.username ? updatedUser : c);
         setContingents(updatedContingents);
-        localStorage.setItem("silat_contingents", JSON.stringify(updatedContingents));
         sessionStorage.setItem("current_session_token", newToken);
       }
 
@@ -541,18 +469,7 @@ export default function App() {
       return;
     }
 
-    // Check duplicate username or contingent name
-    const dupUser = contingents.some(c => c.username.toLowerCase() === u.toLowerCase());
-    const dupKonti = contingents.some(c => c.contingentName.toLowerCase() === konti.toLowerCase());
-
-    if (dupUser) {
-      alert("Username sudah digunakan oleh kontingen lain!");
-      return;
-    }
-    if (dupKonti) {
-      alert("Nama kontingen ini sudah didaftarkan!");
-      return;
-    }
+    // Pengecekan username duplikat telah dinonaktifkan sesuai permintaan pengguna
 
     // Unique queue payment suffix code (e.g. random 100-400 as GAS code)
     const suffix = Math.floor(Math.random() * 300) + 100;
@@ -1095,7 +1012,6 @@ Mohon validasi kelengkapan berkas atlet ini.`);
               onAccAll={handleAccAll}
               onTriggerRefresh={() => {
                 setAthletes(INITIAL_ATHLETES);
-                localStorage.setItem("silat_athletes", JSON.stringify(INITIAL_ATHLETES));
                 // Clear any cached brackets so that brackets refresh cleanly
                 for (let i = localStorage.length - 1; i >= 0; i--) {
                   const key = localStorage.key(i);
@@ -1146,10 +1062,7 @@ Mohon validasi kelengkapan berkas atlet ini.`);
               }}
               onUploadReceipt={handleUploadReceipt}
               onTriggerRefresh={() => {
-                // re-fetch from storage to mock real sync
-                const saved = localStorage.getItem("silat_athletes");
-                if (saved) setAthletes(JSON.parse(saved));
-                alert("Data sinkronisasi atlet berhasil ditarik dari server.");
+                alert("Data sinkronisasi atlet sudah real-time terhubung dengan server (Firebase).");
               }}
             /></motion.div>
           );
@@ -1971,6 +1884,16 @@ Mohon validasi kelengkapan berkas atlet ini.`);
         return null;
     }
   };
+
+  if (!isSettingsLoaded || !isContingentsLoaded || !isAthletesLoaded || !isLogsLoaded) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-white flex flex-col items-center justify-center font-sans">
+        <span className="w-12 h-12 border-4 border-slate-700 border-t-red-600 rounded-full animate-spin mb-4"></span>
+        <p className="font-bold text-lg">Menghubungkan ke Cloud Database...</p>
+        <p className="text-slate-400 text-sm mt-2">Sinkronisasi data real-time perangkat.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 font-sans selection:bg-red-800 selection:text-white flex flex-col justify-between">
